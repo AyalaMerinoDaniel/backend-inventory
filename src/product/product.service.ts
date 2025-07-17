@@ -6,6 +6,7 @@ import { Category } from 'src/category/entities/category.entity';
 import { ILike, Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { SelectorOptionDto } from 'src/common/dtos/selector-option.dtos';
 
 @Injectable()
 export class ProductService {
@@ -118,4 +119,32 @@ export class ProductService {
       data: null
     };
   }
+
+  async getUserForSelector(paginationDto: PaginationDto){
+      const { limit = 0, offset = 0, value = '' } = paginationDto;
+  
+      const search = value
+        ? { where: [{ name: ILike(`%${value}%`)}] }
+        : {};
+      
+      const [products, total] = await this.productRepository.findAndCount({
+        ...search,
+        take: limit,
+        skip: offset,
+      }); 
+  
+      const mappedResults: SelectorOptionDto[] = products.map(product => ({
+        id: product.id,
+        value: `${product.name} - ${product.stock}`,
+      }));
+  
+      return {
+      message: "Products selector list retrieved successfully",
+      friendlyMessage: ["Lista para selector de productos obtenida correctamente"],
+      data: {
+        results: mappedResults,
+        total,
+      },
+    };
+}
 }

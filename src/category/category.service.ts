@@ -26,7 +26,6 @@ export class CategoryService {
     };
   }
   
-
   async findAll(paginationdto: PaginationDto) {
     const { limit = 0, offset = 0, value = '' } = paginationdto;
   
@@ -127,4 +126,5 @@ export class CategoryService {
     },
   };
 }
+
 }

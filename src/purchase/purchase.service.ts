@@ -8,6 +8,7 @@ import { PurchaseItem } from './entities/purchase.item.entity';
 import { Product } from 'src/product/entities/product.entity';
 import { Purchase } from './entities/purchase.entity';
 import { FilterPurchasesDto } from './dto/pagination-purchases.dto';
+import * as moment from 'moment';
 
 @Injectable()
 export class PurchaseService {
@@ -65,6 +66,7 @@ export class PurchaseService {
   const newPurchase = this.purchaseRepository.create({
     user,
     items,
+    customerName: dto.customerName,
     total: totalCalculado,
   });
 
@@ -77,34 +79,64 @@ export class PurchaseService {
   };
 }
 
-
   async findAll(filters: FilterPurchasesDto) {
   const { userId, startDate, endDate, offset = 0, limit = 10 } = filters;
 
   const query = this.purchaseRepository.createQueryBuilder('purchase')
-    .leftJoinAndSelect('purchase.user', 'user')
-    .select([
-      'purchase.id',
-      'purchase.total',
-      'purchase.createdAt',
-      'user',
-    ]);
+  .leftJoin('purchase.user', 'user')
+  .select([
+    'purchase.id',
+    'purchase.total',
+    'purchase.createdAt',
+    'user',
+  ])
+  .addSelect(subQuery => {
+    return subQuery
+      .select('COUNT(*)')
+      .from('purchase_item', 'item')
+      .where('item.purchaseId = purchase.id');
+  }, 'product_count')
+  .addSelect(subQuery => {
+    return subQuery
+      .select('COALESCE(SUM(item.quantity), 0)')
+      .from('purchase_item', 'item')
+      .where('item.purchaseId = purchase.id');
+  }, 'quantity_total');
+
 
   if (userId) {
     query.andWhere('purchase.userId = :userId', { userId });
   }
-
   if (startDate) {
-    query.andWhere('purchase.date >= :startDate', { startDate });
+    const startDay = moment(startDate).endOf('day').toISOString();
+    query.andWhere('purchase.createdAt >= :startDate', { startDate: startDay });
   }
-
   if (endDate) {
-    query.andWhere('purchase.date <= :endDate', { endDate });
+    const endOfDay = moment(endDate).endOf('day').toISOString();
+    query.andWhere('purchase.createdAt <= :endDate', { endDate: endOfDay });
   }
 
   query.skip(offset).take(limit);
 
-  const [purchases, total] = await query.getManyAndCount();
+  const rawResults = await query.getRawMany();
+  const purchases = rawResults.map(r => ({
+    id: r.purchase_id,
+    total: r.purchase_total,
+    createdAt: r.purchase_createdAt,
+    user: {
+      id: r.user_id,
+      name: r.user_name,
+      email: r.user_email
+    },
+    productCount: Number(r.product_count),
+    quantityTotal: Number(r.quantity_total),
+  }));
+
+  const countQuery = this.purchaseRepository.createQueryBuilder('purchase');
+  if (userId) countQuery.andWhere('purchase.userId = :userId', { userId });
+  if (startDate) countQuery.andWhere('purchase.createdAt >= :startDate', { startDate });
+  if (endDate) countQuery.andWhere('purchase.createdAt <= :endDate', { endDate });
+  const total = await countQuery.getCount();
 
   return {
     message: 'Purchases list retrieved successfully',
@@ -112,7 +144,6 @@ export class PurchaseService {
     data: { results: purchases, total },
   };
 }
-
 
 
   findOne(id: number) {

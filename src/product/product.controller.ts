@@ -39,4 +39,10 @@ export class ProductController {
   remove(@Param('id') id: string) {
     return this.productService.remove(+id);
   }
+
+  @Post('selector')
+  @Auth([Role.ADMIN, Role.USER])
+  getForSelector(@Body() paginationDto: PaginationDto) {
+    return this.productService.getUserForSelector(paginationDto);
+  }
 }

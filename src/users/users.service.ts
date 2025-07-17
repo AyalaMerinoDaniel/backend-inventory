@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { UsersPaginationDto } from './dto/pagination-users.dto';
 import { UserStatus } from './enums/user-status.enum';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -11,6 +11,8 @@ import * as bcryptjs from 'bcryptjs';
 import { Role } from '../common/enums/rol.enum';
 import { RoleDescriptions } from '../common/constants/role-description.constants';
 import { GenericOption } from '../common/models/generic-option.model';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { SelectorOptionDto } from 'src/common/dtos/selector-option.dtos';
 
 @Injectable()
 export class UsersService {
@@ -176,6 +178,34 @@ export class UsersService {
       friendlyMessage: [`Contraseña actualizada correctamente`], 
       data: null,
     };
+  }
+
+  async getUserForSelector(paginationDto: PaginationDto){
+    const { limit = 0, offset = 0, value = '' } = paginationDto;
+
+    const search = value
+      ? { where: [{ name: ILike(`%${value}%`)}] }
+      : {};
+    
+    const [users, total] = await this.userRepository.findAndCount({
+      ...search,
+      take: limit,
+      skip: offset,
+    }); 
+
+    const mappedResults: SelectorOptionDto[] = users.map(user => ({
+      id: user.id,
+      value: user.name,
+    }));
+
+    return {
+    message: "Category selector list retrieved successfully",
+    friendlyMessage: ["Lista para selector de categorías obtenida correctamente"],
+    data: {
+      results: mappedResults,
+      total,
+    },
+  };
   }
 
 

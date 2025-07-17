@@ -13,6 +13,9 @@ export class Purchase {
   @ManyToOne(() => User, { eager: true })
   user: User;
 
+  @Column({ type: 'varchar', length: 255 })
+  customerName: string;
+
   @Column('float')
   total: number;
 

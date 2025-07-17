@@ -16,7 +16,7 @@ export class PurchaseController {
     return this.purchaseService.create(createPurchaseDto);
   }
 
-  @Get('all')
+  @Post('all')
   @Auth([Role.ADMIN, Role.USER])
   findAll(@Body() paginationDto: FilterPurchasesDto) {
     return this.purchaseService.findAll(paginationDto);

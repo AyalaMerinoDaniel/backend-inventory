@@ -6,6 +6,7 @@ import { Auth } from 'src/auth/decorators/auth.decorator';
 import { Role } from 'src/common/enums/rol.enum';
 import { UsersPaginationDto } from './dto/pagination-users.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('users')
 export class UsersController {
@@ -26,7 +27,6 @@ export class UsersController {
   @Get(':id')
   @Auth([Role.ADMIN, Role.USER])
   findOne(@Param('id') id: string) {
-    console.log('DTO recibido en controlador:', id);
     return this.usersService.findOne(+id);
   }
 
@@ -52,5 +52,11 @@ export class UsersController {
   @Auth([Role.ADMIN])
   changePassword(@Body() dto: ChangePasswordDto) {
     return this.usersService.changePassword(dto);
+  }
+
+  @Post('selector')
+  @Auth([Role.ADMIN, Role.USER])
+  getForSelector(@Body() paginationDto: PaginationDto) {
+    return this.usersService.getUserForSelector(paginationDto);
   }
 }
