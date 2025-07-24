@@ -22,7 +22,8 @@ export class PurchaseController {
     return this.purchaseService.findAll(paginationDto);
   }
 
-  @Get(':id')
+  @Get('details/:id')
+  @Auth([Role.ADMIN, Role.USER])
   findOne(@Param('id') id: string) {
     return this.purchaseService.findOne(+id);
   }

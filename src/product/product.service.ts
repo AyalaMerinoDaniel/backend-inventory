@@ -135,7 +135,7 @@ export class ProductService {
   
       const mappedResults: SelectorOptionDto[] = products.map(product => ({
         id: product.id,
-        value: `${product.name} - ${product.stock}`,
+        value: `${product.name} - Disponibilidad: ${product.stock}`,
       }));
   
       return {

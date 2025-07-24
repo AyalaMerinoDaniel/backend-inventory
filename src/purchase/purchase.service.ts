@@ -88,6 +88,7 @@ export class PurchaseService {
     'purchase.id',
     'purchase.total',
     'purchase.createdAt',
+    'purchase.customerName',
     'user',
   ])
   .addSelect(subQuery => {
@@ -123,6 +124,7 @@ export class PurchaseService {
     id: r.purchase_id,
     total: r.purchase_total,
     createdAt: r.purchase_createdAt,
+    customerName: r.purchase_customerName,
     user: {
       id: r.user_id,
       name: r.user_name,
@@ -146,8 +148,17 @@ export class PurchaseService {
 }
 
 
-  findOne(id: number) {
-    return `This action returns a #${id} purchase`;
+  async findOne(id: number) {
+    const purchase = await this.purchaseRepository.findOneBy({id});
+    if(!purchase){
+      throw new NotFoundException(`Purchase with id ${id} not found`)
+    }
+
+    return {
+      message: "Purchase retrieved successfully",
+      friendlyMessage: [`Compra obtenido correctamente`],
+      data: purchase
+    };
   }
 
   update(id: number, updatePurchaseDto: UpdatePurchaseDto) {
